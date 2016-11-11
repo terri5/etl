@@ -5,14 +5,12 @@
  */
 package com.etl.test;
 
-import com.ihangmei.bigdata.etl.util.DwUtil;
-import com.ihangmei.bigdata.etl.util.HbaseUtil;
+import com.bigdata.etl.util.DwUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 
 /**

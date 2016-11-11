@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.ihangmei.bigdata.etl.util;
+package com.bigdata.etl.util;
 
 import com.microsoft.sqlserver.jdbc.SQLServerBulkCopy;
 import com.sun.rowset.CachedRowSetImpl;

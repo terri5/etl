@@ -3,10 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.ihangmei.bigdata.etl;
+package com.bigdata.etl;
 
-import com.ihangmei.bigdata.etl.util.DwUtil;
-import com.ihangmei.bigdata.etl.util.HbaseUtil;
+import com.bigdata.etl.util.DwUtil;
+import com.bigdata.etl.util.HbaseUtil;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalTime;
 import java.util.ArrayList;

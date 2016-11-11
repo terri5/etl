@@ -17,9 +17,9 @@ import java.sql.SQLException;
 public class DataSource {
     
     static String driverName = "com.microsoft.sqlserver.jdbc.SQLServerDriver";//加载驱动程序 
-    static String url = "jdbc:sqlserver://amsqldwserver2016.database.chinacloudapi.cn:1433;databaseName=amwifiboxsqldw;sendStringParametersAsUnicode=false;";
-    static String user = "amsqldwsa";
-    static String password = "Password!23";
+    static String url = "";
+    static String user = "";
+    static String password = "";
 
     
     private static HikariDataSource ds;

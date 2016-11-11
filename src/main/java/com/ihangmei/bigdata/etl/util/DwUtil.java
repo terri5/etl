@@ -7,7 +7,6 @@ package com.ihangmei.bigdata.etl.util;
 
 import com.microsoft.sqlserver.jdbc.SQLServerBulkCopy;
 import com.sun.rowset.CachedRowSetImpl;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -26,9 +25,9 @@ import org.apache.commons.lang.StringUtils;
 public class DwUtil {
 
     static String driverName = "com.microsoft.sqlserver.jdbc.SQLServerDriver";//加载驱动程序 
-    static String url = "jdbc:sqlserver://amsqldwserver2016.database.chinacloudapi.cn:1433;databaseName=amwifiboxsqldw;sendStringParametersAsUnicode=false;";
-    static String user = "amsqldwsa";
-    static String password = "Password!23";
+    static String url = "";
+    static String user = "";
+    static String password = "";
 
     public static void bulkInsert(String tableName, List<Map<String, String>> lst) {
 
@@ -39,13 +38,13 @@ public class DwUtil {
             stmt = conn.createStatement();
             rs = stmt.executeQuery("select top 0 * from " + tableName);
             try (SQLServerBulkCopy bulk = new SQLServerBulkCopy(url + "user=" + user + ";password=" + password)) {
-                 
+
                 bulk.setDestinationTableName(tableName);
                 ResultSetMetaData rsmd = rs.getMetaData();
                 if (lst == null) {
                     return;
                 }
-               // System.out.println(LocalTime.now() + " "+Thread.currentThread().getId()+" 收到写入"+lst.size());
+                // System.out.println(LocalTime.now() + " "+Thread.currentThread().getId()+" 收到写入"+lst.size());
                 try (CachedRowSetImpl x = new CachedRowSetImpl()) {
                     x.populate(rs);
                     for (int k = 0; k < lst.size(); k++) {
@@ -113,17 +112,17 @@ public class DwUtil {
                         x.moveToCurrentRow();
                         //x.acceptChanges();
                     }
-                  
+
                     long start = System.currentTimeMillis();
                     bulk.writeToServer(x);
                     long end = System.currentTimeMillis();
-                    System.out.println(LocalTime.now()+" "+Thread.currentThread().getId()+ " 耗时" + (end - start) + "ms"+" 写入"+x.size());
+                    System.out.println(LocalTime.now() + " " + Thread.currentThread().getId() + " 耗时" + (end - start) + "ms" + " 写入" + x.size());
                 }
             }
 
         } catch (SQLException e) {
             Logger.getLogger(DwUtil.class.getName()).log(Level.SEVERE, null, e);
-        } finally {       
+        } finally {
             try {
                 if (rs != null) {
                     rs.close();

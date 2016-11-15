@@ -27,40 +27,47 @@ import org.apache.hadoop.hbase.util.Bytes;
  * @author GZETL
  */
 public class HbaseUtil {
-      static final Configuration cfg = HBaseConfiguration.create();
+
+    static final Configuration cfg = HBaseConfiguration.create();
     static Connection connection;
 
-    static{
-         cfg.set("hbase.zookeeper.property.clientPort", "2181");
-         cfg.set("hbase.zookeeper.quorum", "172.16.2.41,172.16.2.42,172.16.2.43");
+    static {
+        cfg.set("hbase.zookeeper.property.clientPort", "2181");
+        cfg.set("hbase.zookeeper.quorum", "172.16.2.41,172.16.2.42,172.16.2.43");
+        cfg.setInt("hbase.rpc.timeout", 20000);
+
         // cfg.set("hbase.master", "airmediahbasev3.azurehdinsight.cn:60000");
         try {
             connection = ConnectionFactory.createConnection(cfg);
         } catch (IOException ex) {
             Logger.getLogger(HbaseUtil.class.getName()).log(Level.SEVERE, "初始化configuration异常", ex);
         }
-    
+
     }
-     public static ResultScanner Scan(String tableName,String rowkeyPrefix) {
+
+    public static ResultScanner Scan(String tableName, String rowkeyPrefix) {
         try {
 
-            Table table = connection.getTable(TableName.valueOf(tableName));
+            try (Table table = connection.getTable(TableName.valueOf(tableName))) {
 
-            Filter filter1 = new RowFilter(CompareFilter.CompareOp.EQUAL,
-                    new BinaryPrefixComparator(Bytes.toBytes(rowkeyPrefix)));
-            // EQUAL 
+                Filter filter1 = new RowFilter(CompareFilter.CompareOp.EQUAL,
+                        new BinaryPrefixComparator(Bytes.toBytes(rowkeyPrefix)));
+                // EQUAL 
 
-            Scan s = new Scan();
-            s.setFilter(filter1);
-            ResultScanner rs = table.getScanner(s);
-  
-            return rs;
-  
+                Scan s = new Scan();
+                s.setMaxResultSize(10000);
+                s.setCaching(1000);
+                s.setFilter(filter1);
+                ResultScanner rs = table.getScanner(s);
+
+                return rs;
+
+            }
 
         } catch (IOException e) {
             // TODO Auto-generated catch block
-             e.printStackTrace();
+            e.printStackTrace();
         }
-          return null;
+        return null;
     }
 }

@@ -9,23 +9,21 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import static java.util.concurrent.TimeUnit.*;
 
 /**
  *
  * @author GZETL
  */
-public class DataSource {
+public class DataSource implements SqlDwInfo{
 
-    static String driverName = "com.microsoft.sqlserver.jdbc.SQLServerDriver";//加载驱动程序 
-    static String url = "";
-    static String user = "";
-    static String password = "";
+    private static final long CONNECTION_TIMEOUT =HOURS.toMillis(1);  
 
     private static HikariDataSource ds;
 
     static {
         DataSource ds = new DataSource();
-        ds.init(10, 50);
+        ds.init(60, 100);
     }
 
     /**
@@ -43,6 +41,7 @@ public class DataSource {
         config.addDataSourceProperty("cachePrepStmts", true);
         config.addDataSourceProperty("prepStmtCacheSize", 500);
         config.addDataSourceProperty("prepStmtCacheSqlLimit", 2048);
+        config.setConnectionTimeout(CONNECTION_TIMEOUT);
         //  config.setConnectionTestQuery("SELECT 1");
         config.setAutoCommit(true);
         //池中最小空闲链接数量

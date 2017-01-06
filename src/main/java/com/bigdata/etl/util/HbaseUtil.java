@@ -35,6 +35,10 @@ public class HbaseUtil {
         cfg.set("hbase.zookeeper.property.clientPort", "2181");
         cfg.set("hbase.zookeeper.quorum", "172.16.2.41,172.16.2.42,172.16.2.43");
         cfg.setInt("hbase.rpc.timeout", 20000);
+        cfg.setInt("hbase.client.retries.number", 10);
+        cfg.setInt("zookeeper.recovery.retry", 3);
+        cfg.setInt("zookeeper.recovery.retry.intervalmill", 200);
+        cfg.setInt("hbase.client.operation.timeout", 30000);
 
         // cfg.set("hbase.master", "airmediahbasev3.azurehdinsight.cn:60000");
         try {
@@ -46,28 +50,54 @@ public class HbaseUtil {
     }
 
     public static ResultScanner Scan(String tableName, String rowkeyPrefix) {
-        try {
 
-            try (Table table = connection.getTable(TableName.valueOf(tableName))) {
+        //  try (Connection conn = ConnectionFactory.createConnection(cfg)) {
+        try (Table table = connection.getTable(TableName.valueOf(tableName))) {
 
-                Filter filter1 = new RowFilter(CompareFilter.CompareOp.EQUAL,
-                        new BinaryPrefixComparator(Bytes.toBytes(rowkeyPrefix)));
-                // EQUAL 
+            Filter filter1 = new RowFilter(CompareFilter.CompareOp.EQUAL,
+                    new BinaryPrefixComparator(Bytes.toBytes(rowkeyPrefix)));
+            // EQUAL 
 
-                Scan s = new Scan();
-                s.setMaxResultSize(10000);
-                s.setCaching(1000);
-                s.setFilter(filter1);
-                ResultScanner rs = table.getScanner(s);
+            Scan s = new Scan();
+            s.setMaxResultSize(10000);
+            s.setCaching(1000);
+            s.setFilter(filter1);
+            ResultScanner rs = table.getScanner(s);
 
-                return rs;
+            return rs;
 
-            }
-
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        } catch (IOException ex) {
+            Logger.getLogger(HbaseUtil.class.getName()).log(Level.SEVERE, null, ex);
         }
+        /*
+            } catch (IOException ex) {
+                Logger.getLogger(HbaseUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+         */
+        return null;
+    }
+
+    public static ResultScanner Scan(String tableName, String startRow, String endRow) {
+
+        //  try (Connection conn = ConnectionFactory.createConnection(cfg)) {
+        try (Table table = connection.getTable(TableName.valueOf(tableName))) {
+
+            Scan s = new Scan();
+            s.setMaxResultSize(10000);
+            s.setCaching(1000);
+            s.setStartRow(Bytes.toBytes(startRow));
+            s.setStopRow(Bytes.toBytes(endRow));
+            ResultScanner rs = table.getScanner(s);
+            return rs;
+
+        } catch (IOException ex) {
+            Logger.getLogger(HbaseUtil.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        /*
+            } catch (IOException ex) {
+                Logger.getLogger(HbaseUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+         */
         return null;
     }
 }

@@ -6,6 +6,7 @@
 package com.bigdata.etl.util;
 
 import com.microsoft.sqlserver.jdbc.SQLServerBulkCopy;
+import com.microsoft.sqlserver.jdbc.SQLServerBulkCopyOptions;
 import com.sun.rowset.CachedRowSetImpl;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -22,12 +23,7 @@ import org.apache.commons.lang.StringUtils;
  *
  * @author GZETL
  */
-public class DwUtil {
-
-    static String driverName = "com.microsoft.sqlserver.jdbc.SQLServerDriver";//加载驱动程序 
-    static String url = "";
-    static String user = "";
-    static String password = "";
+public class DwUtil implements SqlDwInfo{
 
     public static void bulkInsert(String tableName, List<Map<String, String>> lst) {
 
@@ -38,7 +34,9 @@ public class DwUtil {
             stmt = conn.createStatement();
             rs = stmt.executeQuery("select top 0 * from " + tableName);
             try (SQLServerBulkCopy bulk = new SQLServerBulkCopy(url + "user=" + user + ";password=" + password)) {
-
+                SQLServerBulkCopyOptions sqlsbc = new SQLServerBulkCopyOptions();
+                sqlsbc.setBulkCopyTimeout(60 * 60 * 1000);
+                bulk.setBulkCopyOptions(sqlsbc);
                 bulk.setDestinationTableName(tableName);
                 ResultSetMetaData rsmd = rs.getMetaData();
                 if (lst == null) {
@@ -61,21 +59,23 @@ public class DwUtil {
                                         if (map.containsKey(name) && map.get(name).matches("\\d{1,}")) {
                                             x.updateLong(i, Long.valueOf(map.get(name)));
                                         } else {
-                                            x.updateLong(i, 0);
+                                            //   x.updateLong(i, 0);
+                                            x.updateNull(i);
                                         }
                                         break;
                                     case Types.FLOAT:
                                         if (map.containsKey(name) && map.get(name).matches("([+-]?)\\d*\\.\\d+$")) {
                                             x.updateFloat(i, Float.valueOf(map.get(name)));
                                         } else {
-                                            x.updateFloat(i, 0);
+                                            x.updateNull(i);
+
                                         }
                                         break;
                                     case Types.DOUBLE:
                                         if (map.containsKey(name) && map.get(name).trim().length() > 0 && StringUtils.isNumeric(map.get(name))) {
                                             x.updateDouble(i, Double.valueOf(map.get(name)));
                                         } else {
-                                            x.updateDouble(i, 0);
+                                            x.updateNull(i);
                                         }
                                         break;
 
@@ -83,7 +83,7 @@ public class DwUtil {
                                         if (map.containsKey(name) && map.get(name).matches("\\d{1,}")) {
                                             x.updateInt(i, Integer.valueOf(map.get(name)));
                                         } else {
-                                            x.updateInt(i, 0);
+                                            x.updateNull(i);
                                         }
                                         break;
                                     case Types.VARCHAR:
@@ -93,7 +93,7 @@ public class DwUtil {
                                         if (map.containsKey(name)) {
                                             x.updateString(i, v.length() > len ? v.substring(0, len) : v);
                                         } else {
-                                            x.updateString(i, "");
+                                            x.updateNull(i);
                                         }
                                         break;
                                     default:

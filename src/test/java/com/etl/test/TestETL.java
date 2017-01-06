@@ -25,7 +25,7 @@ public class TestETL {
     @Test
     public void testExport(){
      //   HbaseUtil.Scan("DEVICE_LOG_APP","20161110000000"); 
-     DwUtil.bulkInsert("base.device_log_app_2016",null);
+    // DwUtil.bulkInsert("base.device_log_app_2016",null);
     }
     @BeforeClass
     public static void setUpClass() {

@@ -30,7 +30,7 @@ import org.apache.hadoop.hbase.client.ResultScanner;
  */
 public class ETL {
 
-    public static String DW_TTABLE = "BASE.DEVICE_LOG_APP_2017";
+    public static String DW_TTABLE = "BASE.DEVICE_LOG_APP_2016";
     private static String HBASE_TABLE = "DEVICE_LOG_APP_2017";
     private static BlockingQueue queue = new ArrayBlockingQueue(1000000);
     public static boolean processing = true;

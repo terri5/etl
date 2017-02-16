@@ -23,7 +23,7 @@ import org.apache.commons.lang.StringUtils;
  *
  * @author GZETL
  */
-public class DwUtil implements SqlDwInfo{
+public class DwUtil implements SqlDwInfo {
 
     public static void bulkInsert(String tableName, List<Map<String, String>> lst) {
 
@@ -55,6 +55,16 @@ public class DwUtil implements SqlDwInfo{
 
                             try {
                                 switch (type) {
+                                    case Types.VARCHAR:
+                                    case Types.NVARCHAR:
+                                        int len = rsmd.getColumnDisplaySize(i);
+                                        String v = map.get(name);
+                                        if (map.containsKey(name)) {
+                                            x.updateString(i, v.length() > len ? v.substring(0, len) : v);
+                                        } else {
+                                            x.updateNull(i);
+                                        }
+                                        break;
                                     case Types.BIGINT:
                                         if (map.containsKey(name) && map.get(name).matches("\\d{1,}")) {
                                             x.updateLong(i, Long.valueOf(map.get(name)));
@@ -86,16 +96,7 @@ public class DwUtil implements SqlDwInfo{
                                             x.updateNull(i);
                                         }
                                         break;
-                                    case Types.VARCHAR:
-                                    case Types.NVARCHAR:
-                                        int len = rsmd.getColumnDisplaySize(i);
-                                        String v = map.get(name);
-                                        if (map.containsKey(name)) {
-                                            x.updateString(i, v.length() > len ? v.substring(0, len) : v);
-                                        } else {
-                                            x.updateNull(i);
-                                        }
-                                        break;
+
                                     default:
                                         throw new RuntimeException("未知的数据类型 " + type);
                                 }

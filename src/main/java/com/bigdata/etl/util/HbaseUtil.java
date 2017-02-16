@@ -35,10 +35,12 @@ public class HbaseUtil {
         cfg.set("hbase.zookeeper.property.clientPort", "2181");
         cfg.set("hbase.zookeeper.quorum", "172.16.2.41,172.16.2.42,172.16.2.43");
         cfg.setInt("hbase.rpc.timeout", 20000);
-        cfg.setInt("hbase.client.retries.number", 10);
+        cfg.setInt("hbase.client.retries.number", 1000*6);
+        //cfg.setInt("hbase.client.scanner.caching", 100);
+        cfg.setInt("hbase.regionserver.lease.period", 6000*5);
         cfg.setInt("zookeeper.recovery.retry", 3);
         cfg.setInt("zookeeper.recovery.retry.intervalmill", 200);
-        cfg.setInt("hbase.client.operation.timeout", 30000);
+        cfg.setInt("hbase.client.operation.timeout", 30000*5);
 
         // cfg.set("hbase.master", "airmediahbasev3.azurehdinsight.cn:60000");
         try {

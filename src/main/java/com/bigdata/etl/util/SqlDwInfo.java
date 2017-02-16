@@ -10,6 +10,7 @@ package com.bigdata.etl.util;
  * @author GZETL
  */
 public interface SqlDwInfo {
+
     static String driverName = "com.microsoft.sqlserver.jdbc.SQLServerDriver";//加载驱动程序 
     static String url = "";
     static String user = "amsqldwsa";

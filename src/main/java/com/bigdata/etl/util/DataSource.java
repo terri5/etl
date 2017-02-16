@@ -27,7 +27,7 @@ public class DataSource implements SqlDwInfo{
     }
 
     /**
-     * 初始化连接池
+     * 初始化连接池 
      *
      * @param minimum
      * @param Maximum

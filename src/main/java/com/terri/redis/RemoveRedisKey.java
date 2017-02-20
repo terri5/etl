@@ -5,6 +5,7 @@ import com.terri.redis.email.SendMail;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalTime;
@@ -55,15 +56,17 @@ public class RemoveRedisKey {
     public static void main(String[] args) throws InterruptedException {
         //  loadConf("redis.properties");
         loadResources("redis.properties");
-        jedis_his = new Jedis(redis_his_host, Integer.parseInt(redis_his_port), Integer.parseInt(timeout));
-        jedis_his.auth(redis_his_auth);
+//        jedis_his = new Jedis(redis_his_host, Integer.parseInt(redis_his_port), Integer.parseInt(timeout));
+        //      jedis_his.auth(redis_his_auth);
         jedis = new Jedis(redis_host, Integer.parseInt(redis_port), Integer.parseInt(timeout));
         jedis.auth(redis_auth);
-        jedis_his.select(2);
-        RemoveAllKey("20160920", jedis_his);
+        // jedis_his.select(2);
+
+        RemoveBeforekeys(jedis);
+        cutUrlSet(jedis);
         // loadHisUser();
         //  jedis.select(2);
-        // cutNewUrlSet("201610923",jedis_his);
+        //      cutUrlSet("201610923", jedis);
         //statisticsHash("20161024", "bus");
         //  RemoveAllKey();
         /*
@@ -81,16 +84,48 @@ public class RemoveRedisKey {
             }
             return;
         }
-        RemoveBeforekeys();
+      
         cutUrlSet();
         handleOffLine();
-
+    */
         if ("00".equals(TODAY.substring(8, 10)) || new_days_finished.size() > 0) // 如果是０点启动则备份，或者有新离线任务有完成，则备份
         {
             jedis.bgsave();
         }
+         
+        MailInfo m = getEmailMsg(jedis);
+        jedis.close();
+        if (m != null) {
+            SendMail.send(m);
+            System.out.print(m.getContent());
+        }
         System.out.println(Calendar.getInstance().getTime() + " finished");
-         */
+
+    }
+
+    private static void RemoveBeforekeys(Jedis jedis) {
+        Calendar c = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        c.add(Calendar.DAY_OF_YEAR, -7);
+        for (int i = 0; i < 8; i++) {
+            c.add(Calendar.DAY_OF_YEAR, -1);
+            RemoveAllKey(sdf.format(c.getTime()), jedis);
+            // System.out.println(sdf.format(c.getTime()));
+        }
+
+    }
+    
+    
+    private static void cutUrlSet(Jedis jedis) {
+        Calendar c = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+
+        for (int i = 0; i < 8; i++) {
+            c.add(Calendar.DAY_OF_YEAR, -1);
+            RemoveRedisKey.cutUrlSet(sdf.format(c.getTime()), jedis);
+
+        }
+
     }
 
     public static void loadHisUser() {
@@ -266,6 +301,27 @@ public class RemoveRedisKey {
                 System.out.println(key);
             }
         }
+        p.syncAndReturnAll();
+
+        p = jedis.pipelined();
+        Set<String> s3 = jedis.keys("app:blob:" + day_id + "*");
+        for (String key : s3) {
+            p.del(key);
+            if (++i % 10000 == 0) {
+                p.sync();
+                System.out.println(key);
+            }
+        }
+        p.syncAndReturnAll();
+        p = jedis.pipelined();
+        Set<String> s4 = jedis.keys("wifilog:aio:*:" + day_id + "*");
+        for (String key : s4) {
+            p.del(key);
+            if (++i % 10000 == 0) {
+                p.sync();
+                System.out.println(key);
+            }
+        }
         p.sync();
     }
 
@@ -346,18 +402,18 @@ public class RemoveRedisKey {
 
     }
 
-    public static void cutNewUrlSet(String day_id, Jedis jedis) {
-        cutNewUrlSet(day_id, "train", jedis);
-        cutNewUrlSet(day_id, "bus", jedis);
+    public static void cutUrlSet(String day_id, Jedis jedis) {
+        cutUrlSet(day_id, "train", jedis);
+        cutUrlSet(day_id, "bus", jedis);
     }
 
-    public static void cutNewUrlSet(String day_id, String dt, Jedis jedis) {
+    public static void cutUrlSet(String day_id, String dt, Jedis jedis) {
         if (TODAY.startsWith(day_id)) {
             throw new RuntimeException("非法的参数" + day_id + "，不允许裁剪当天的数据");
         }
         System.out.println("cut url set:" + day_id + " " + dt);
         int keep = 50;
-        Set<String> keys = new HashSet<String>();
+        Set<String> keys = new HashSet<>();
         GregorianCalendar gc = new GregorianCalendar();
         gc.add(GregorianCalendar.DAY_OF_YEAR, -3);
         String yesterday = sdf.format(gc.getTime());
@@ -466,8 +522,8 @@ public class RemoveRedisKey {
         return false;
     }
 
-    private static MailInfo getEmailMsg() {
-        String msg = "";
+    private static MailInfo getEmailMsg(Jedis jedis) {
+        StringBuilder msg = new StringBuilder();
         String title = "";
         if (new_days_finished.size() > 0) {
 
@@ -476,24 +532,28 @@ public class RemoveRedisKey {
             } else {
                 title = "通知：";
             }
-
-            msg += new_days_finished.toString() + " 完成,共完成" + total_finished_cnt + "/" + TOTAL_DAYS + " 天";
+            msg.append(new_days_finished.toString()).append(" 完成,共完成").append(total_finished_cnt + " " + TOTAL_DAYS + " 天");
         }
 
         double rest_memory = OSHelper.getFreePhysicalMemorySize();
         if (rest_memory < 10) {//剩余内存小于10g 告警
             title = "警告：";
-            msg += System.lineSeparator() + "系统可用内存不足，" + rest_memory + "g 请整理";
+            msg.append(System.lineSeparator() + "系统可用内存不足，" + rest_memory + "g 请整理");
+        }
+        checkOnlineProcessing(jedis, title, msg, "app:product");
+        checkOnlineProcessing(jedis, title, msg, "sys:product");
+       
+        if (msg.length() > 0 && title.isEmpty()) {
+            title = "警告：";
         }
         if (!title.isEmpty()) {
-            msg += System.lineSeparator() + TODAY;
+            msg.append(System.lineSeparator() + TODAY);
         } else {
             return null;
         }
-
         MailInfo m = new MailInfo();
         m.setSubject(title);
-        m.setContent(msg);
+        m.setContent(msg.toString());
         return m;
     }
 
@@ -530,10 +590,41 @@ public class RemoveRedisKey {
             }
         }
 
-        MailInfo m = getEmailMsg();
+        MailInfo m = getEmailMsg(jedis);
         if (m != null) {
             SendMail.send(m);
         }
+    }
+
+    private static void checkOnlineProcessing(Jedis jedis, String title, StringBuilder msg, String evtHub_group) {
+        String hostPattern = evtHub_group + ":RD*";
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Set<String> hosts = jedis.keys(hostPattern);
+        if (hosts == null || hosts.size() == 0) {
+            msg.append(System.lineSeparator() + evtHub_group.substring(0, evtHub_group.indexOf(-1)) + "解析异常，所有key消失,当前所用模式：" + hostPattern);
+        }
+        StringBuilder sb = new StringBuilder();
+        hosts.stream().forEach((String host) -> {
+            if (!"string".equals(jedis.type(host))) {
+                return;//错误日志，不再继续检查
+            }
+            String time = jedis.get(host);
+            try {
+                Date d1 = new Date();
+                Date d2 = df.parse(time.replaceAll("\"", ""));
+                long diff = d1.getTime() - d2.getTime() - 8 * 60 * 60 * 1000;
+                long miniutes = diff / (1000 * 60);
+                if (miniutes > 10 && miniutes < 60 * 24) {
+                    sb.append(System.lineSeparator()).append(evtHub_group.substring(0, evtHub_group.indexOf(":")) + "解析超时：主机   ").append(host).append("   当前解析时间：").append(time);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        if (sb.length() > 0) {
+            msg.append(sb);
+        }
+
     }
 
 }
